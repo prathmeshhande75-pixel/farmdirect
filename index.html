@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>AgriNova – Smart Farming Marketplace</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  </head>
+  <body>
+    <header>
+      <h1>🌾 AgriNova</h1>
+      <nav>
+        <button onclick="switchRole('customer')">Customer</button>
+        <button onclick="switchRole('farmer')">Farmer</button>
+        <button onclick="switchRole('admin')">Admin</button>
+        <button onclick="toggleDark()">🌙</button>
+      </nav>
+    </header>
+
+    <section id="login">
+      <h2 id="roleTitle">Customer Login</h2>
+      <input id="username" placeholder="Enter your name" />
+      <button onclick="login()">Login</button>
+    </section>
+
+    <!-- CUSTOMER -->
+    <section id="customer" class="hidden">
+      <h2>🛒 Marketplace</h2>
+      <input placeholder="Search products..." oninput="search(this.value)" />
+
+      <div class="products" id="productList"></div>
+
+      <div class="cart">
+        <h3>Total: ₹<span id="total">0</span></h3>
+        <button onclick="pay()">Pay Online</button>
+        <button onclick="cod()">Cash on Delivery</button>
+      </div>
+    </section>
+
+    <!-- FARMER -->
+    <section id="farmer" class="hidden">
+      <h2>👨‍🌾 Farmer Dashboard</h2>
+      <input id="pname" placeholder="Product name" />
+      <input id="pprice" placeholder="Price" type="number" />
+      <select id="pcat">
+        <option>Vegetables</option>
+        <option>Fruits</option>
+        <option>Grains</option>
+      </select>
+      <button onclick="addProduct()">Add Product</button>
+    </section>
+
+    <!-- ADMIN -->
+    <section id="admin" class="hidden">
+      <h2>📊 Admin Dashboard</h2>
+      <canvas id="chart"></canvas>
+      <p>Total Products: <span id="prodCount"></span></p>
+      <p>Total Orders: <span id="orders"></span></p>
+    </section>
+
+    <!-- WHATSAPP -->
+    <a class="whatsapp" href="https://wa.me/919021979897" target="_blank">💬</a>
+
+    <script>
+      /* ---------- DATA ---------- */
+      let role = "customer";
+      let total = 0;
+      let orders = 0;
+
+      let products = [
+        { name: "Tomatoes", price: 40, badge: "Best Seller" },
+        { name: "Potatoes", price: 30 },
+        { name: "Onions", price: 35 },
+        { name: "Wheat", price: 50 },
+        { name: "Rice", price: 60, badge: "New" },
+        { name: "Apples", price: 120 },
+        { name: "Bananas", price: 50 },
+        { name: "Mangoes", price: 150 },
+        { name: "Chilli", price: 90 },
+        { name: "Garlic", price: 110 },
+      ];
+
+      /* ---------- LOGIN ---------- */
+      function switchRole(r) {
+        role = r;
+        document.getElementById("roleTitle").innerText =
+          r.toUpperCase() + " Login";
+      }
+
+      function login() {
+        document.getElementById("login").classList.add("hidden");
+        document.getElementById(role).classList.remove("hidden");
+        renderProducts();
+        drawChart();
+      }
+
+      /* ---------- CUSTOMER ---------- */
+      function renderProducts(list = products) {
+        const div = document.getElementById("productList");
+        div.innerHTML = "";
+        list.forEach((p) => {
+          div.innerHTML += `
+                                                                                                            <div class="card">
+                                                                                                                 <h3>${
+                                                                                                                   p.name
+                                                                                                                 }</h3>
+                                                                                                                      ${
+                                                                                                                        p.badge
+                                                                                                                          ? `<span class="badge">${p.badge}</span>`
+                                                                                                                          : ""
+                                                                                                                      }
+                                                                                                                           <p>₹${
+                                                                                                                             p.price
+                                                                                                                           }</p>
+                                                                                                                                <button onclick="addToCart(${
+                                                                                                                                  p.price
+                                                                                                                                })">Add</button>
+                                                                                                                                   </div>`;
+        });
+        document.getElementById("prodCount").innerText = products.length;
+      }
+
+      function addToCart(price) {
+        total += price;
+        document.getElementById("total").innerText = total;
+      }
+
+      function search(val) {
+        renderProducts(
+          products.filter((p) =>
+            p.name.toLowerCase().includes(val.toLowerCase())
+          )
+        );
+      }
+
+      /* ---------- PAYMENT ---------- */
+      function pay() {
+        if (total === 0) return alert("Cart empty");
+        const options = {
+          key: "rzp_test_1DP5mmOlF5G5ag",
+          amount: total * 100,
+          currency: "INR",
+          name: "AgriNova",
+          handler: () => {
+            alert("Payment Successful!");
+            orders++;
+            total = 0;
+            document.getElementById("total").innerText = 0;
+            drawChart();
+          },
+        };
+        new Razorpay(options).open();
+      }
+
+      function cod() {
+        alert("Order placed with Cash on Delivery");
+        orders++;
+        total = 0;
+        document.getElementById("total").innerText = 0;
+        drawChart();
+      }
+
+      /* ---------- FARMER ---------- */
+      function addProduct() {
+        products.push({
+          name: pname.value,
+          price: Number(pprice.value),
+        });
+        alert("Product Added");
+        renderProducts();
+      }
+
+      /* ---------- ADMIN ---------- */
+      function drawChart() {
+        const c = document.getElementById("chart");
+        const ctx = c.getContext("2d");
+        ctx.clearRect(0, 0, c.width, c.height);
+        ctx.fillStyle = "#4CAF50";
+        ctx.fillRect(10, 100, 50, orders * 10);
+        ctx.fillStyle = "#2196F3";
+        ctx.fillRect(80, 100, 50, products.length * 5);
+        document.getElementById("orders").innerText = orders;
+      }
+
+      /* ---------- DARK MODE ---------- */
+      function toggleDark() {
+        document.body.classList.toggle("dark");
+      }
+
+      /* ---------- PWA ---------- */
+      let deferredPrompt;
+      window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        const btn = document.createElement("button");
+        btn.innerText = "Install App";
+        btn.onclick = () => deferredPrompt.prompt();
+        document.body.appendChild(btn);
+      });
+    </script>
+  </body>
+</html>
